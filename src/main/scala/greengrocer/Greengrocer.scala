@@ -20,13 +20,37 @@ object Greengrocer extends App {
     }
   }
 
-  sealed trait Item {
+  sealed trait Item extends Offer {
     val name: String
     val price: Money
   }
+
+  sealed trait Offer {
+    def offer(nItem: Int): Money
+  }
+
   object Item {
-    case class Orange(name: String = "Orange", price: Money = Money(25)) extends Item
-    case class Apple(name: String = "Apple", price: Money = Money(60)) extends Item
+    case class Orange(name: String = "Orange", price: Money = Money(25)) extends Item {
+      override def offer(nItem: Int): Money = {
+        val amount = this.price.amount
+        val remainder = nItem % 3
+        val price = amount * nItem
+        val discount = price / 3
+        val discountNotExactly = amount * (nItem - remainder)
+
+        if (remainder == 0) Money(price - discount)
+        else Money(discountNotExactly - (discountNotExactly / 3) + (amount * remainder))
+      }
+    }
+    case class Apple(name: String = "Apple", price: Money = Money(60)) extends Item {
+      override def offer(nItem: Int): Money = {
+        val amount = this.price.amount
+        val remainder = nItem % 2
+
+        if (remainder == 0) Money(amount * nItem / 2)
+        else Money((amount * (nItem - 1) / 2) + amount)
+      }
+    }
 
     def parseItem(name: String): Option[Item] = name match {
       case apple if apple == "Apple" => Some(Apple())
@@ -37,7 +61,7 @@ object Greengrocer extends App {
     implicit class Total(items: Seq[Item]) {
       def getTotal: Money = items match {
         case empty if empty.isEmpty => Money(0)
-        case _ => items.map (_.price).reduce (_+ _)
+        case _ => items.groupBy(identity).mapValues(_.size).map(i => i._1.offer(i._2)).reduce(_ + _)
       }
     }
   }
