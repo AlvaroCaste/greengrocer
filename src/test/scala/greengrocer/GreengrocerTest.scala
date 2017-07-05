@@ -7,7 +7,7 @@ class GreengrocerTest extends FlatSpec with Matchers {
   behavior of "Greengrocer"
 
   it should "be sum items' price" in {
-    Greengrocer.getTotalPrice("Apple", "Apple", "Orange", "Apple") shouldBe "£2.05"
+    Greengrocer.getTotalPrice("Apple", "Apple", "Orange", "Apple") shouldBe "£1.45"
   }
 
 }
