@@ -7,9 +7,10 @@ object Greengrocer extends App {
   case class Money(amount: Int) {
     def +(money: Money) = Money(this.amount + money.amount)
 
-    override def toString = {
-      if (amount < 100) s"${amount}p"
-      else {
+    override def toString = amount match {
+      case zero if zero == 0 => s"£$amount"
+      case lessThanHundred if lessThanHundred < 100 => s"${amount}p"
+      case _ => {
         val integerPart = amount / 100
         val decimalPart = amount % 100
         decimalPart match {
