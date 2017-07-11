@@ -1,7 +1,5 @@
 package greengrocer
 
-import greengrocer.Greengrocer.Item.{Apple, Orange}
-
 object Greengrocer extends App {
 
   case class Money(amount: Int) {
@@ -29,11 +27,21 @@ object Greengrocer extends App {
   object Item {
     case class Orange(name: String = "Orange", price: Money = Money(25)) extends Item
     case class Apple(name: String = "Apple", price: Money = Money(60)) extends Item
+
+    def parseItem(name: String): Option[Item] = name match {
+      case apple if apple == "Apple" => Some(Apple())
+      case orange if orange == "Orange" => Some(Orange())
+      case _ => None
+    }
+
+    implicit class Total(items: Seq[Item]) {
+      def getTotal: Money = items match {
+        case empty if empty.isEmpty => Money(0)
+        case _ => items.map (_.price).reduce (_+ _)
+      }
+    }
   }
 
-  def getTotalPrice(fruit: String*): String = fruit.map {
-    case apple if apple == "Apple" => Apple().price
-    case _ => Orange().price
-  }.reduce(_ + _).toString
-
+  import greengrocer.Greengrocer.Item.parseItem
+  def getTotalPrice(fruit: String*): String = fruit.flatMap(parseItem).getTotal.toString
 }
