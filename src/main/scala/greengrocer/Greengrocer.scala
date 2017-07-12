@@ -20,37 +20,28 @@ object Greengrocer extends App {
     }
   }
 
-  sealed trait Item extends Offer {
+  sealed trait Item {
     val name: String
     val price: Money
+    val offer: Option[Offer]
   }
 
-  sealed trait Offer {
-    def offer(nItem: Int): Money
+  case class Offer(numToTake: Int, numToPay: Int) {
+    def discount(nItem: Int, price: Money): Money = {
+      val amount = price.amount
+      val pack = nItem / numToTake
+      val partDiscount = pack * amount * numToPay
+      val partWithoutDiscount = amount * (nItem % numToTake)
+      Money(partDiscount + partWithoutDiscount)
+    }
   }
 
   object Item {
-    case class Orange(name: String = "Orange", price: Money = Money(25)) extends Item {
-      override def offer(nItem: Int): Money = {
-        val amount = this.price.amount
-        val remainder = nItem % 3
-        val price = amount * nItem
-        val discount = price / 3
-        val discountNotExactly = amount * (nItem - remainder)
+    case class Orange(name: String = "Orange", price: Money = Money(25),
+                      offer: Option[Offer] = Some(Offer(2, 1))) extends Item
 
-        if (remainder == 0) Money(price - discount)
-        else Money(discountNotExactly - (discountNotExactly / 3) + (amount * remainder))
-      }
-    }
-    case class Apple(name: String = "Apple", price: Money = Money(60)) extends Item {
-      override def offer(nItem: Int): Money = {
-        val amount = this.price.amount
-        val remainder = nItem % 2
-
-        if (remainder == 0) Money(amount * nItem / 2)
-        else Money((amount * (nItem - 1) / 2) + amount)
-      }
-    }
+    case class Apple(name: String = "Apple", price: Money = Money(60),
+                     offer: Option[Offer] = Some(Offer(3, 2))) extends Item
 
     def parseItem(name: String): Option[Item] = name match {
       case apple if apple == "Apple" => Some(Apple())
@@ -61,7 +52,11 @@ object Greengrocer extends App {
     implicit class Total(items: Seq[Item]) {
       def getTotal: Money = items match {
         case empty if empty.isEmpty => Money(0)
-        case _ => items.groupBy(identity).mapValues(_.size).map(i => i._1.offer(i._2)).reduce(_ + _)
+        case _ => items.groupBy(identity).mapValues(_.size)
+          .map(i => i._1.offer match {
+            case Some(offer) => offer.discount(i._2, i._1.price)
+            case None => Money(i._2 * i._1.price.amount)
+          }).reduce(_ + _)
       }
     }
   }
